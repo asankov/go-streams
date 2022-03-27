@@ -17,8 +17,8 @@ static <T> Stream<T> generate(Supplier<T> s)
 /* Returns an infinite sequential ordered Stream produced by iterative application of a function f to an initial element seed, producing a Stream consisting of seed, f(seed), f(f(seed)), etc. */
 static <T> Stream<T> iterate(T seed, UnaryOperator<T> f)
 
-/* Performs a reduction on the elements of this stream, using the provided identity, accumulation and combining functions. */
-<U> U reduce(U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner)
+// Methods inherited from interface java.util.stream.BaseStream
+// close, isParallel, iterator, onClose, parallel, sequential, spliterator, unordered
 ```
 
 ## Caveats
@@ -43,3 +43,23 @@ I did not want to do this for the base `Stream` type, where I wanted to allow al
 
 Instead, this is done on a separate type that has this limitation - [`ComparableStream`](stream/comparable_stream.go).
 This type embeds `Stream` and has all the methods that `Stream` has.
+
+### Implementational deficiencies
+
+The Stream API is just that - an API, an interface to be implemented.
+It abstracts the need to access members directly, and it allows you to focus on the data flow.
+
+However, the current implementation uses just a slice to hold the data.
+This makes some of the operations non-efficient and does not allow for parallelization of execution (or it makes it hard) (see [`parallel`](https://docs.oracle.com/javase/8/docs/api/java/util/stream/BaseStream.html#parallel--)).
+
+Another deficiency of my implementation is the lack of lazy execution.
+
+In Java this code:
+
+```java
+Stream.of(1,2,3).map(i -> i + 1)
+```
+
+would be a no-op, because there is no consuming operation called (for example, `forEach`).
+
+In my implementation this will run, it will iterate all values, map them and just throw away the result.

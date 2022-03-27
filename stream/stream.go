@@ -302,3 +302,13 @@ func (s *Stream[V]) ReduceWithIdentity(identity V, operator func(first, second V
 	}
 	return res
 }
+
+// Reduce performs a reduction on the elements of this stream,
+// using the provided identity, accumulation and combining functions.
+//
+// java: <U> U reduce(U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner)
+func (s *Stream[V]) ReduceWithIdentityAndCombiner(identity V, operator func(first, second V) V, combiner func(first, second V) V) V {
+	// the combiner only makes sense in a paraller execution
+	// we still don't support that so just ignore
+	return s.ReduceWithIdentity(identity, operator)
+}
