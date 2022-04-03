@@ -17,8 +17,8 @@ static <T> Stream<T> generate(Supplier<T> s)
 /* Returns an infinite sequential ordered Stream produced by iterative application of a function f to an initial element seed, producing a Stream consisting of seed, f(seed), f(f(seed)), etc. */
 static <T> Stream<T> iterate(T seed, UnaryOperator<T> f)
 
-// Methods inherited from interface java.util.stream.BaseStream
-// close, isParallel, iterator, onClose, parallel, sequential, spliterator, unordered
+// Methods inherited from interface java.util.stream.BaseStream:
+// iterator, spliterator
 ```
 
 ## Caveats
@@ -34,7 +34,7 @@ The `distinct` function cannot be implemented if the allowed types if the type `
 That is because unlike in Java, some types in Go cannot be compared.
 
 In Java each object has the `equals` method which can be used for comparison.
-In Go, there is no such thing and comparing values by using `==`.
+In Go, there is no such thing and we compare values by using `==`.
 Types that can be compared via `==` implement the `comparable` interface.
 
 Hence, in order to implement this we need to limit `V` to `comparable`.

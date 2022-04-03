@@ -1,6 +1,7 @@
 package stream_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -52,16 +53,6 @@ func TestOfSingle(t *testing.T) {
 	require.NotNil(t, str.FindFirst())
 }
 
-func TestToArray(t *testing.T) {
-	str := stream.Of([]int{1, 2, 3})
-	arr := str.ToArray()
-
-	require.Equal(t, 3, len(arr))
-	require.Contains(t, arr, 1)
-	require.Contains(t, arr, 2)
-	require.Contains(t, arr, 3)
-}
-
 func TestLimit(t *testing.T) {
 	str := stream.Of([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 
@@ -83,7 +74,7 @@ func TestConcat(t *testing.T) {
 	}
 }
 
-func testStream(t *testing.T, str *stream.Stream[int]) {
+func testStream(t *testing.T, str stream.Stream[int]) {
 	require.Equal(t, 3, str.Count())
 
 	anyMatch := str.AnyMatch(func(i int) bool { return i == 1 })
@@ -128,7 +119,7 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 	require.NotNil(t, str.FindAny())
 	require.NotNil(t, str.FindFirst())
 
-	flatMappedInt := str.FlatMapToInt(func(el int) *stream.Stream[int] {
+	flatMappedInt := str.FlatMapToInt(func(el int) stream.Stream[int] {
 		return stream.Of([]int{el * 5, el * 10})
 	})
 	require.True(t, flatMappedInt.AnyMatch(func(i int) bool { return i == 5 }))
@@ -138,7 +129,7 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 	require.True(t, flatMappedInt.AnyMatch(func(i int) bool { return i == 20 }))
 	require.True(t, flatMappedInt.AnyMatch(func(i int) bool { return i == 30 }))
 
-	flatMappedDouble := str.FlatMapToLong(func(el int) *stream.Stream[float64] {
+	flatMappedDouble := str.FlatMapToLong(func(el int) stream.Stream[float64] {
 		return stream.Of([]float64{float64(el) + 0.5, float64(el) + 0.75})
 	})
 	require.True(t, flatMappedDouble.AnyMatch(func(i float64) bool { return i == 1.5 }))
@@ -148,7 +139,7 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 	require.True(t, flatMappedDouble.AnyMatch(func(i float64) bool { return i == 3.5 }))
 	require.True(t, flatMappedDouble.AnyMatch(func(i float64) bool { return i == 3.75 }))
 
-	flatMappedString := stream.FlatMap(str, func(el int) *stream.Stream[string] {
+	flatMappedString := stream.FlatMap(str, func(el int) stream.Stream[string] {
 		s := strconv.Itoa(el)
 		return stream.Of([]string{s, s + "."})
 	})
@@ -162,7 +153,19 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 	reducedSum := str.ReduceWithIdentity(0, func(value, el int) int { return el + value })
 	require.Equal(t, 6, reducedSum)
 
-	t.Run("TestReduce", func(t *testing.T) {
+	reducedSum = str.ReduceWithIdentityAndCombiner(0, func(value, el int) int { return el + value }, func(first, second int) int { return 0 })
+	require.Equal(t, 6, reducedSum)
+
+	t.Run("ToArray", func(t *testing.T) {
+		arr := str.ToArray()
+
+		require.Equal(t, 3, len(arr))
+		require.Contains(t, arr, 1)
+		require.Contains(t, arr, 2)
+		require.Contains(t, arr, 3)
+	})
+
+	t.Run("Reduce", func(t *testing.T) {
 		res := stream.Empty[int]().Reduce(func(first, second int) int {
 			if first > second {
 				return first
@@ -190,7 +193,7 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 		require.Equal(t, 3, *res)
 	})
 
-	t.Run("TestForEach", func(t *testing.T) {
+	t.Run("ForEach", func(t *testing.T) {
 		calledTimes := 0
 		str.ForEach(func(i int) {
 			calledTimes++
@@ -201,7 +204,7 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 		require.Equal(t, 3, calledTimes)
 	})
 
-	t.Run("TestForEachOrdered", func(t *testing.T) {
+	t.Run("ForEachOrdered", func(t *testing.T) {
 		calledTimes := 0
 		str.ForEachOrdered(func(i int) {
 			calledTimes++
@@ -248,4 +251,56 @@ func testStream(t *testing.T, str *stream.Stream[int]) {
 		require.Equal(t, j, i)
 	})
 	require.Equal(t, 3, j)
+
+	t.Run("Close - no handlers", func(t *testing.T) {
+		str := stream.Empty[int]()
+		require.NotPanics(t, func() {
+			str.Close()
+		})
+	})
+
+	t.Run("Close - handlers, no panic", func(t *testing.T) {
+		str := stream.Empty[int]()
+
+		called := 0
+		str = str.OnClose(func() { called++ })
+		require.NotPanics(t, func() {
+			str.Close()
+		})
+		require.Equal(t, 1, called)
+	})
+
+	t.Run("Close - handlers, panic with error", func(t *testing.T) {
+		str := stream.Empty[int]()
+		str.OnClose(func() {
+			panic(fmt.Errorf("panic on close"))
+		})
+		require.Panics(t, func() {
+			str.Close()
+		})
+	})
+
+	t.Run("Close - handlers, panic with non-error", func(t *testing.T) {
+		str := stream.Empty[int]()
+		str.OnClose(func() {
+			panic("panic on close")
+		})
+		require.Panics(t, func() {
+			str.Close()
+		})
+	})
+
+	t.Run("Parallel/IsParallel/Sequential", func(t *testing.T) {
+		str := stream.Empty[int]()
+		require.False(t, str.IsParallel())
+
+		str = str.Sequential()
+		require.False(t, str.IsParallel())
+
+		str = str.Parallel()
+		require.True(t, str.IsParallel())
+
+		str = str.Sequential()
+		require.False(t, str.IsParallel())
+	})
 }

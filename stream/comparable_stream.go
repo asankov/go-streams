@@ -1,7 +1,10 @@
 package stream
 
+// compile-time interface check
+var _ Stream[int] = (*ComparableStream[int])(nil)
+
 type ComparableStream[V comparable] struct {
-	*Stream[V]
+	Stream[V]
 }
 
 func ComparableStreamOf[V comparable](elements []V) *ComparableStream[V] {
@@ -14,10 +17,10 @@ func ComparableStreamOf[V comparable](elements []V) *ComparableStream[V] {
 //
 // java: Stream<T> distinct()
 func (s *ComparableStream[V]) Distinct() *ComparableStream[V] {
-	set := map[V]interface{}{}
-	for _, el := range s.elements {
+	set := map[V]any{}
+	s.ForEach(func(el V) {
 		set[el] = struct{}{}
-	}
+	})
 	uniqueElements := make([]V, 0, len(set))
 	for uniqueElement := range set {
 		uniqueElements = append(uniqueElements, uniqueElement)

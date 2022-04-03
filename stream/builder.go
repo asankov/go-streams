@@ -29,6 +29,6 @@ func (b *Builder[V]) Add(value V) *Builder[V] {
 // Build builds and returns the stream.
 //
 // java: Stream<T> build()
-func (b *Builder[V]) Build() *Stream[V] {
+func (b *Builder[V]) Build() Stream[V] {
 	return Of(b.elements)
 }
