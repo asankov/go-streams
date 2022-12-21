@@ -12,7 +12,11 @@ package stream
 //
 //	java: <R> Stream<R> map(Function<? super T,? extends R> mapper)
 func Map[T any, R any](stream Stream[T], mapper func(T) R) Stream[R] {
-	panic("stream: there is no available Stream implementation yet.")
+	mapped := make([]R, 0, stream.Count())
+	stream.ForEach(func(el T) {
+		mapped = append(mapped, mapper(el))
+	})
+	return Of(mapped...)
 }
 
 // FlatMap returns a stream consisting of the results of replacing each element of this stream
@@ -25,7 +29,17 @@ func Map[T any, R any](stream Stream[T], mapper func(T) R) Stream[R] {
 //
 //	java: <R> Stream<R> flatMap(Function<? super T,? extends Stream<? extends R>> mapper)
 func FlatMap[T any, R any](stream Stream[T], mapper func(T) Stream[R]) Stream[R] {
-	panic("stream: there is no available Stream implementation yet.")
+	streams := make([]Stream[R], 0, stream.Count())
+	stream.ForEach(func(t T) {
+		streams = append(streams, mapper(t))
+	})
+
+	newEl := make([]R, 0, stream.Count())
+	for _, str := range streams {
+		newEl = append(newEl, str.ToArray()...)
+	}
+
+	return Of(newEl...)
 }
 
 // Collect performs a mutable reduction operation on the elements of this stream.
@@ -37,7 +51,14 @@ func FlatMap[T any, R any](stream Stream[T], mapper func(T) Stream[R]) Stream[R]
 //
 //	java: <R> R collect(Supplier<R> supplier, BiConsumer<R,? super T> accumulator, BiConsumer<R,R> combiner)
 func Collect[T any, R any](stream Stream[T], supplier Supplier[R], accumulator BiConsumer[T, R], combiner BiConsumer[R, R]) R {
-	panic("stream: there is no available Stream implementation yet.")
+	r := supplier()
+	stream.ForEach(func(t T) {
+		accumulator(t, r)
+	})
+
+	return r
+
+	// TODO: use combiner if stream is parallel
 }
 
 // CollectWithCollector performs a mutable reduction operation on the elements of this stream using a Collector.
@@ -50,8 +71,8 @@ func Collect[T any, R any](stream Stream[T], supplier Supplier[R], accumulator B
 // NOTE: In Java this method overloads the "collect" method, but Go does not support method overloads, so we need to change the name.
 //
 //	java: <R,A> R collect(Collector<? super T,A,R> collector)
-func CollectWithCollector[T any, A any, R any](stream Stream[T], collector Collector[T, A, R]) {
-	panic("stream: there is no available Stream implementation yet.")
+func CollectWithCollector[T any, A any, R any](stream Stream[T], collector Collector[T, A, R]) R {
+	return Collect(stream, collector.Supplier(), collector.Accumulator(), collector.Combiner())
 }
 
 // ReduceWithIdentityAndCombiner performs a reduction on the elements of this stream, using the provided identity, accumulation and combining functions.
