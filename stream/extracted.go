@@ -58,7 +58,7 @@ func Collect[T any, R any](stream Stream[T], supplier Supplier[R], accumulator B
 
 	return r
 
-	// TODO: use combiner if stream is parallel
+	// TODO(asankov): use combiner if stream is parallel
 }
 
 // CollectWithCollector performs a mutable reduction operation on the elements of this stream using a Collector.
@@ -86,5 +86,12 @@ func CollectWithCollector[T any, A any, R any](stream Stream[T], collector Colle
 //
 //	java: <U> U reduce(U identity, BiFunction<U,? super T,U> accumulator, BinaryOperator<U> combiner)
 func ReduceWithIdentityAndCombiner[T any, U any](stream Stream[T], identity U, accumulator func(U, T) U, combiner func(U, U) U) U {
-	panic("stream: there is no available Stream implementation yet.")
+	res := identity
+	stream.ForEach(func(t T) {
+		res = accumulator(res, t)
+	})
+
+	// TODO(asankov): use combiner if the stream is parallel
+
+	return res
 }

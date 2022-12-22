@@ -22,8 +22,7 @@ type Stream[T any] interface {
 	// NOTE: In Java all objects can be compared via Objects.equals.
 	// In Go, that is not the case, and not everything can be compared via ==.
 	// In order for this method to be able to be implemented the constraint of the generic type should be "comparable", not "any".
-	//
-	// TODO(asankov): create ComparableStream interface that is constrained by "comparable" and link it here.
+	// This means that this method will not be available for some implementations of the interface and might panic or produce unexpected results.
 	//
 	// 	java: Stream<T> distinct()
 	Distinct() Stream[T]

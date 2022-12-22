@@ -309,5 +309,4 @@ func TestSliceStream(t *testing.T) {
 		_ = s.Sequential()
 		_ = s.Parallel()
 	})
-
 }
