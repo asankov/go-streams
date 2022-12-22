@@ -1,4 +1,4 @@
-module github.com/asankov/go-stream
+module github.com/asankov/go-streams
 
 go 1.19
 

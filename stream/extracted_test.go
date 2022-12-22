@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/asankov/go-stream/stream"
+	"github.com/asankov/go-streams/stream"
 	"github.com/stretchr/testify/require"
 )
 

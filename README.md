@@ -9,7 +9,7 @@ It uses generics to enable the consumers to use the Stream with whatever data ty
 If you want to use this package in your code:
 
 ```console
-go get github.com/asankov/go-stream
+go get github.com/asankov/go-streams
 ```
 
 and then:
